@@ -2,30 +2,30 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use std::env;
-use std::io;
-use std::path::{Path, PathBuf};
-use std::str::FromStr;
-
 extern crate clap;
 #[macro_use]
 extern crate log;
 extern crate proc_macro2;
 #[macro_use]
+extern crate quote;
+#[macro_use]
 extern crate serde;
 extern crate serde_json;
-#[macro_use]
-extern crate quote;
 #[macro_use]
 extern crate syn;
 extern crate toml;
 
+use std::env;
+use std::io;
+use std::path::{Path, PathBuf};
+use std::str::FromStr;
+
 use clap::{Arg, ArgMatches, Command};
+
+use crate::bindgen::{Bindings, Builder, Cargo, Config, Error, Profile, Style};
 
 mod bindgen;
 mod logging;
-
-use crate::bindgen::{Bindings, Builder, Cargo, Config, Error, Profile, Style};
 
 fn apply_config_overrides(config: &mut Config, matches: &ArgMatches) {
     // We allow specifying a language to override the config default. This is
@@ -161,7 +161,19 @@ fn main() {
                 .long("lang")
                 .value_name("LANGUAGE")
                 .help("Specify the language to output bindings in")
-                .possible_values(["c++", "C++", "c", "C", "cython", "Cython"]),
+                .possible_values([
+                    "c++",
+                    "C++", 
+                    "c", 
+                    "C", 
+                    "cython", 
+                    "Cython", 
+                    "Java-JNA",
+                    "Java-Jna",
+                    "java-jna",
+                    "JavaJNA",
+                    "JavaJna",
+                    "javajna"]),
         )
         .arg(
             Arg::new("cpp-compat")
