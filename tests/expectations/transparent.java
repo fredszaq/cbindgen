@@ -71,13 +71,14 @@ interface Bindings extends Library {
   }
 
 
+
   class TransparentPrimitiveWrappingStructTuple extends IntegerType {
     public TransparentPrimitiveWrappingStructTuple() {
-      super(4);
+      super(4, true);
     }
 
     public TransparentPrimitiveWrappingStructTuple(long value) {
-      super(4, value);
+      super(4, value, true);
     }
 
     public TransparentPrimitiveWrappingStructTuple(Pointer p) {
@@ -97,14 +98,17 @@ interface Bindings extends Library {
     }
 
     public TransparentPrimitiveWrappingStructTuple getValue() {
-      return new TransparentPrimitiveWrappingStructTuple(getPointer().getInt(0));
+      Pointer p = getPointer();
+      return new TransparentPrimitiveWrappingStructTuple(p.getInt(0));
     }
 
     public void setValue(TransparentPrimitiveWrappingStructTuple value) {
-      getPointer().setInt(0, value.intValue());
+      Pointer p = getPointer();
+      p.setInt(0, value.intValue());
     }
 
   }
+
 
 
   class TransparentComplexWrappingStructure extends DummyStruct implements Structure.ByValue {
@@ -132,13 +136,14 @@ interface Bindings extends Library {
   }
 
 
+
   class TransparentPrimitiveWrappingStructure extends IntegerType {
     public TransparentPrimitiveWrappingStructure() {
-      super(4);
+      super(4, true);
     }
 
     public TransparentPrimitiveWrappingStructure(long value) {
-      super(4, value);
+      super(4, value, true);
     }
 
     public TransparentPrimitiveWrappingStructure(Pointer p) {
@@ -158,14 +163,17 @@ interface Bindings extends Library {
     }
 
     public TransparentPrimitiveWrappingStructure getValue() {
-      return new TransparentPrimitiveWrappingStructure(getPointer().getInt(0));
+      Pointer p = getPointer();
+      return new TransparentPrimitiveWrappingStructure(p.getInt(0));
     }
 
     public void setValue(TransparentPrimitiveWrappingStructure value) {
-      getPointer().setInt(0, value.intValue());
+      Pointer p = getPointer();
+      p.setInt(0, value.intValue());
     }
 
   }
+
 
 
   class TransparentComplexWrapper_i32 extends DummyStruct implements Structure.ByValue {
@@ -193,13 +201,14 @@ interface Bindings extends Library {
   }
 
 
+
   class TransparentPrimitiveWrapper_i32 extends IntegerType {
     public TransparentPrimitiveWrapper_i32() {
-      super(4);
+      super(4, true);
     }
 
     public TransparentPrimitiveWrapper_i32(long value) {
-      super(4, value);
+      super(4, value, true);
     }
 
     public TransparentPrimitiveWrapper_i32(Pointer p) {
@@ -219,22 +228,26 @@ interface Bindings extends Library {
     }
 
     public TransparentPrimitiveWrapper_i32 getValue() {
-      return new TransparentPrimitiveWrapper_i32(getPointer().getInt(0));
+      Pointer p = getPointer();
+      return new TransparentPrimitiveWrapper_i32(p.getInt(0));
     }
 
     public void setValue(TransparentPrimitiveWrapper_i32 value) {
-      getPointer().setInt(0, value.intValue());
+      Pointer p = getPointer();
+      p.setInt(0, value.intValue());
     }
 
   }
 
+
+
   class TransparentPrimitiveWithAssociatedConstants extends IntegerType {
     public TransparentPrimitiveWithAssociatedConstants() {
-      super(4);
+      super(4, true);
     }
 
     public TransparentPrimitiveWithAssociatedConstants(long value) {
-      super(4, value);
+      super(4, value, true);
     }
 
     public TransparentPrimitiveWithAssociatedConstants(Pointer p) {
@@ -256,14 +269,17 @@ interface Bindings extends Library {
     }
 
     public TransparentPrimitiveWithAssociatedConstants getValue() {
-      return new TransparentPrimitiveWithAssociatedConstants(getPointer().getInt(0));
+      Pointer p = getPointer();
+      return new TransparentPrimitiveWithAssociatedConstants(p.getInt(0));
     }
 
     public void setValue(TransparentPrimitiveWithAssociatedConstants value) {
-      getPointer().setInt(0, value.intValue());
+      Pointer p = getPointer();
+      p.setInt(0, value.intValue());
     }
 
   }
+
 
   public static final TransparentPrimitiveWrappingStructure TEN  = new TransparentPrimitiveWrappingStructure(10);
 

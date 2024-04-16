@@ -9,13 +9,14 @@ enum BindingsSingleton {
 interface Bindings extends Library {
   Bindings INSTANCE = BindingsSingleton.INSTANCE.lib;
 
+
   class Transparent extends IntegerType {
     public Transparent() {
-      super(1);
+      super(1, true);
     }
 
     public Transparent(long value) {
-      super(1, value);
+      super(1, value, true);
     }
 
     public Transparent(Pointer p) {
@@ -35,14 +36,17 @@ interface Bindings extends Library {
     }
 
     public Transparent getValue() {
-      return new Transparent(getPointer().getByte(0));
+      Pointer p = getPointer();
+      return new Transparent(p.getByte(0));
     }
 
     public void setValue(Transparent value) {
-      getPointer().setByte(0, (byte)value.intValue());
+      Pointer p = getPointer();
+      p.setByte(0, (byte)value.intValue());
     }
 
   }
+
 
   public static final Transparent FOO  = new Transparent(0);
 
