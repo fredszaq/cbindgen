@@ -260,7 +260,7 @@ impl LanguageBackend for JavaJnaLanguageBackend<'_> {
                     cfg: None,
                 },
                 Field {
-                    name: e.export_name.to_lowercase(),
+                    name: "data".to_string(),
                     ty: Type::Path(GenericPath::new(Path::new(union_name), vec![])),
                     documentation: Documentation::none(),
                     annotations: Default::default(),
