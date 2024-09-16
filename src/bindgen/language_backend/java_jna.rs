@@ -192,56 +192,80 @@ impl LanguageBackend for JavaJnaLanguageBackend<'_> {
             },
         );
 
-        // If the enum has associated data, write it as a union
+        // If the enum has associated data, write it as a separate union and a wrapper struct
         if has_data {
-            let union_name = format!("{}Data", e.export_name);
-            let mut fields = vec![
-                Field {
-                    name: "tag".to_string(),
-                    ty: Type::Path(GenericPath::new(Path::new(e.export_name.clone()), vec![])),
-                    documentation: Documentation::none(),
-                    annotations: Default::default(),
-                    cfg: None,
-                }
-            ];
-            fields.extend(e.variants.iter().filter_map(|v| {
+            let union_name = format!("{}Union", e.export_name);
+            let wrapper_name = format!("{}Data", e.export_name);
+
+            // Write the union struct
+            let union_fields: Vec<Field> = e.variants.iter().filter_map(|v| {
                 let body = match &v.body {
-                    VariantBody::Body {
-                        body,
-                        ..
-                    } => body,
+                    VariantBody::Body { body, .. } => body,
                     _ => return None,
                 };
-                println!("body: {:?}", body);
+
                 Some(Field {
-                    name: v.export_name.to_lowercase(),
+                    name: v.name.to_lowercase(),
                     ty: body.fields.first().unwrap().ty.clone(),
                     documentation: Documentation::none(),
                     annotations: Default::default(),
                     cfg: None,
                 })
-            }));
+            }).collect();
 
             self.write_jna_struct(
                 out,
                 &JnaStruct {
                     documentation: &Documentation::none(),
                     constants: &vec![],
-                    fields: &fields,
+                    fields: &union_fields,
                     name: &union_name,
                     superclass: "Union",
                     interface: "Structure.ByValue",
                     deprecated: None,
                 },
             );
+
+            // Write the wrapper struct
+            let wrapper_fields = vec![
+                Field {
+                    name: "tag".to_string(),
+                    ty: Type::Path(GenericPath::new(Path::new(e.export_name.clone()), vec![])),
+                    documentation: Documentation::none(),
+                    annotations: Default::default(),
+                    cfg: None,
+                },
+                Field {
+                    name: "data".to_string(),
+                    ty: Type::Path(GenericPath::new(Path::new(union_name.clone()), vec![])),
+                    documentation: Documentation::none(),
+                    annotations: Default::default(),
+                    cfg: None,
+                },
+            ];
+
             self.write_jna_struct(
                 out,
                 &JnaStruct {
                     documentation: &Documentation::none(),
                     constants: &vec![],
-                    fields: &fields,
-                    name: &format!("{}ByReference", &union_name),
-                    superclass: "Union",
+                    fields: &wrapper_fields,
+                    name: &wrapper_name,
+                    superclass: "Structure",
+                    interface: "Structure.ByValue",
+                    deprecated: None,
+                },
+            );
+
+            // Write the ByReference version of the wrapper struct
+            self.write_jna_struct(
+                out,
+                &JnaStruct {
+                    documentation: &Documentation::none(),
+                    constants: &vec![],
+                    fields: &wrapper_fields,
+                    name: &format!("{}ByReference", &wrapper_name),
+                    superclass: "Structure",
                     interface: "Structure.ByReference",
                     deprecated: None,
                 },
