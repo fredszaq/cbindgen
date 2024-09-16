@@ -187,7 +187,7 @@ impl LanguageBackend for JavaJnaLanguageBackend<'_> {
                             Literal::Expr(e) => e.parse::<i32>().ok(),
                             _ => None,
                         })
-                        .unwrap_or(current_discriminant + 1);
+                        .unwrap_or(current_discriminant);
                     lb.write_documentation(out, &variant.documentation);
                     write!(
                         out,
