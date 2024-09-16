@@ -165,7 +165,7 @@ impl LanguageBackend for JavaJnaLanguageBackend<'_> {
         if has_data {
             tag_name = format!("{}Tag", e.export_name);
         }
-        
+
         self.write_integer_type(
             out,
             &JnaIntegerType {
@@ -234,7 +234,7 @@ impl LanguageBackend for JavaJnaLanguageBackend<'_> {
             let wrapper_fields = vec![
                 Field {
                     name: "tag".to_string(),
-                    ty: Type::Path(GenericPath::new(Path::new(e.export_name.clone()), vec![])),
+                    ty: Type::Path(GenericPath::new(Path::new(tag_name), vec![])),
                     documentation: Documentation::none(),
                     annotations: Default::default(),
                     cfg: None,
