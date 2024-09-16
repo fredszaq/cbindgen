@@ -240,8 +240,8 @@ impl LanguageBackend for JavaJnaLanguageBackend<'_> {
                     constants: &vec![],
                     fields: &wrapper_fields,
                     name: &e.export_name,
-                    superclass: "Structure",
-                    interface: "Structure.ByValue",
+                    superclass: "Union",
+                    interface: "Union.ByValue",
                     deprecated: None,
                 },
             );
@@ -254,8 +254,8 @@ impl LanguageBackend for JavaJnaLanguageBackend<'_> {
                     constants: &vec![],
                     fields: &wrapper_fields,
                     name: &format!("{}ByReference", &e.export_name),
-                    superclass: "Structure",
-                    interface: "Structure.ByReference",
+                    superclass: "Union",
+                    interface: "Union.ByReference",
                     deprecated: None,
                 },
             );
