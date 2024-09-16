@@ -207,16 +207,14 @@ impl LanguageBackend for JavaJnaLanguageBackend<'_> {
             fields.extend(e.variants.iter().filter_map(|v| {
                 let body = match &v.body {
                     VariantBody::Body {
-                        name,
                         body,
-                        inline,
-                        inline_casts,
-                    } => name,
+                        ..
+                    } => body,
                     _ => return None,
                 };
                 Some(Field {
                     name: v.export_name.to_lowercase(),
-                    ty: Type::Path(GenericPath::new(Path::new(body), vec![])),
+                    ty: Type::Path(GenericPath::new(Path::new(body.export_name.clone()), vec![])),
                     documentation: Documentation::none(),
                     annotations: Default::default(),
                     cfg: None,
