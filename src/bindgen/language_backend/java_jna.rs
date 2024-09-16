@@ -199,8 +199,6 @@ impl LanguageBackend for JavaJnaLanguageBackend<'_> {
 
         // If the enum has associated data, write it as a separate union and a wrapper struct
         if has_data {
-            let union_name = format!("{}Union", e.export_name);
-
             // Write the union struct
             let union_fields: Vec<Field> = e.variants.iter().filter_map(|v| {
                 let body = match &v.body {
@@ -217,21 +215,8 @@ impl LanguageBackend for JavaJnaLanguageBackend<'_> {
                 })
             }).collect();
 
-            self.write_jna_struct(
-                out,
-                &JnaStruct {
-                    documentation: &Documentation::none(),
-                    constants: &vec![],
-                    fields: &union_fields,
-                    name: &union_name,
-                    superclass: "Union",
-                    interface: "Structure.ByValue",
-                    deprecated: None,
-                },
-            );
-
             // Write the wrapper struct
-            let wrapper_fields = vec![
+            let mut wrapper_fields = vec![
                 Field {
                     name: "tag".to_string(),
                     ty: Type::Path(GenericPath::new(Path::new(tag_name), vec![])),
@@ -239,14 +224,8 @@ impl LanguageBackend for JavaJnaLanguageBackend<'_> {
                     annotations: Default::default(),
                     cfg: None,
                 },
-                Field {
-                    name: "data".to_string(),
-                    ty: Type::Path(GenericPath::new(Path::new(union_name.clone()), vec![])),
-                    documentation: Documentation::none(),
-                    annotations: Default::default(),
-                    cfg: None,
-                },
             ];
+            wrapper_fields.extend(union_fields);
 
             self.write_jna_struct(
                 out,
