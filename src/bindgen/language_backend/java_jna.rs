@@ -161,11 +161,12 @@ impl LanguageBackend for JavaJnaLanguageBackend<'_> {
         let has_data = e.tag.is_some();
 
         // First, write the enum as an integer type
+        let tag_name = format!("{}Tag", e.export_name);
         self.write_integer_type(
             out,
             &JnaIntegerType {
                 documentation: &e.documentation,
-                name: &e.export_name,
+                name: &tag_name,
                 underlying_jna_integer_type: UnderlyingJnaIntegerType::Int,
                 signed: false,
                 deprecated: e.annotations.deprecated.as_deref(),
@@ -185,7 +186,7 @@ impl LanguageBackend for JavaJnaLanguageBackend<'_> {
                     write!(
                         out,
                         "public static final {} {} = new {}({});",
-                        e.export_name, variant.export_name, e.export_name, current_discriminant
+                        tag_name, variant.export_name, tag_name, current_discriminant
                     );
                     out.new_line();
                 }
@@ -195,7 +196,6 @@ impl LanguageBackend for JavaJnaLanguageBackend<'_> {
         // If the enum has associated data, write it as a separate union and a wrapper struct
         if has_data {
             let union_name = format!("{}Union", e.export_name);
-            let wrapper_name = format!("{}Data", e.export_name);
 
             // Write the union struct
             let union_fields: Vec<Field> = e.variants.iter().filter_map(|v| {
@@ -250,7 +250,7 @@ impl LanguageBackend for JavaJnaLanguageBackend<'_> {
                     documentation: &Documentation::none(),
                     constants: &vec![],
                     fields: &wrapper_fields,
-                    name: &wrapper_name,
+                    name: &e.export_name,
                     superclass: "Structure",
                     interface: "Structure.ByValue",
                     deprecated: None,
@@ -264,7 +264,7 @@ impl LanguageBackend for JavaJnaLanguageBackend<'_> {
                     documentation: &Documentation::none(),
                     constants: &vec![],
                     fields: &wrapper_fields,
-                    name: &format!("{}ByReference", &wrapper_name),
+                    name: &format!("{}ByReference", &e.export_name),
                     superclass: "Structure",
                     interface: "Structure.ByReference",
                     deprecated: None,
