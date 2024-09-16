@@ -188,6 +188,7 @@ impl LanguageBackend for JavaJnaLanguageBackend<'_> {
                             _ => None,
                         })
                         .unwrap_or(current_discriminant);
+                    current_discriminant += 1;
                     lb.write_documentation(out, &variant.documentation);
                     write!(
                         out,
