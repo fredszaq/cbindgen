@@ -1,3 +1,5 @@
+use heck::ToSnakeCase;
+
 use crate::bindgen::ir::{
     Constant, Documentation, Enum, Field, Function, GenericPath, IntKind, Item, Literal, OpaqueItem, Path, PrimitiveType, Static, Struct, Type, Typedef, Union, VariantBody
 };
@@ -46,7 +48,7 @@ impl LanguageBackend for JavaJnaLanguageBackend<'_> {
         write!(
             out,
             "final {} lib = Native.load(\"{}\", {}.class);",
-            name, self.binding_lib_crate_name, name
+            name, self.binding_lib_crate_name.to_snake_case(), name
         );
         out.close_brace(false);
         out.new_line();
