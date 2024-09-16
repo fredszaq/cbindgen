@@ -206,6 +206,8 @@ impl LanguageBackend for JavaJnaLanguageBackend<'_> {
         // If the enum has associated data, write it as a separate union and a wrapper struct
         if has_data {
             // Write the union struct
+            let union_name = format!("{}Union", e.export_name);
+
             let union_fields: Vec<Field> = e.variants.iter().filter_map(|v| {
                 let body = match &v.body {
                     VariantBody::Body { body, .. } => body,
@@ -221,25 +223,13 @@ impl LanguageBackend for JavaJnaLanguageBackend<'_> {
                 })
             }).collect();
 
-            // Write the wrapper struct
-            let mut wrapper_fields = vec![
-                Field {
-                    name: "tag".to_string(),
-                    ty: Type::Path(GenericPath::new(Path::new(tag_name), vec![])),
-                    documentation: Documentation::none(),
-                    annotations: Default::default(),
-                    cfg: None,
-                },
-            ];
-            wrapper_fields.extend(union_fields);
-
             self.write_jna_struct(
                 out,
                 &JnaStruct {
                     documentation: &Documentation::none(),
                     constants: &vec![],
-                    fields: &wrapper_fields,
-                    name: &e.export_name,
+                    fields: &union_fields,
+                    name: &union_name,
                     superclass: "Union",
                     interface: "Union.ByValue",
                     deprecated: None,
@@ -252,10 +242,54 @@ impl LanguageBackend for JavaJnaLanguageBackend<'_> {
                 &JnaStruct {
                     documentation: &Documentation::none(),
                     constants: &vec![],
-                    fields: &wrapper_fields,
-                    name: &format!("{}ByReference", &e.export_name),
+                    fields: &union_fields,
+                    name: &format!("{}ByReference", &union_name),
                     superclass: "Union",
                     interface: "Union.ByReference",
+                    deprecated: None,
+                },
+            );
+
+            // Write the wrapper struct
+            let wrapper_fields = vec![
+                Field {
+                    name: "tag".to_string(),
+                    ty: Type::Path(GenericPath::new(Path::new(tag_name), vec![])),
+                    documentation: Documentation::none(),
+                    annotations: Default::default(),
+                    cfg: None,
+                },
+                Field {
+                    name: e.export_name.to_lowercase(),
+                    ty: Type::Path(GenericPath::new(Path::new(union_name), vec![])),
+                    documentation: Documentation::none(),
+                    annotations: Default::default(),
+                    cfg: None,
+                },
+            ];
+
+            self.write_jna_struct(
+                out,
+                &JnaStruct {
+                    documentation: &Documentation::none(),
+                    constants: &vec![],
+                    fields: &wrapper_fields,
+                    name: &e.export_name,
+                    superclass: "Structure",
+                    interface: "Structure.ByValue",
+                    deprecated: None,
+                },
+            );
+
+            self.write_jna_struct(
+                out,
+                &JnaStruct {
+                    documentation: &Documentation::none(),
+                    constants: &vec![],
+                    fields: &wrapper_fields,
+                    name: &format!("{}ByReference", &e.export_name),
+                    superclass: "Structure",
+                    interface: "Structure.ByReference",
                     deprecated: None,
                 },
             );
