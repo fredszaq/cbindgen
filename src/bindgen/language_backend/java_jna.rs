@@ -799,14 +799,15 @@ impl JavaJnaLanguageBackend<'_> {
             self.write_documentation(out, &field.documentation);
             out.write("public ");
             self.write_type(out, &field.ty);
-            write!(out, " {};", field.name);
+            write!(out, " {}", field.name);
 
             if let Type::Array(ty, size) = &field.ty {
                 write!(out, " = new ");
                 self.write_type(out, ty);
-                write!(out, "[{}];", size.as_str());
+                write!(out, "[{}]", size.as_str());
             }
 
+            write!(out, ";");
             out.new_line()
         }
 
