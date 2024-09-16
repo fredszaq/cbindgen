@@ -801,6 +801,12 @@ impl JavaJnaLanguageBackend<'_> {
             self.write_type(out, &field.ty);
             write!(out, " {};", field.name);
 
+            if let Type::Array(ty, size) = &field.ty {
+                write!(out, " = new ");
+                self.write_type(out, ty);
+                write!(out, "[{}];", size.as_str());
+            }
+
             out.new_line()
         }
 
