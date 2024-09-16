@@ -212,9 +212,10 @@ impl LanguageBackend for JavaJnaLanguageBackend<'_> {
                     } => body,
                     _ => return None,
                 };
+                println!("body: {:?}", body);
                 Some(Field {
                     name: v.export_name.to_lowercase(),
-                    ty: Type::Path(GenericPath::new(Path::new(body.export_name.clone()), vec![])),
+                    ty: body.fields.first().unwrap().ty.clone(),
                     documentation: Documentation::none(),
                     annotations: Default::default(),
                     cfg: None,
