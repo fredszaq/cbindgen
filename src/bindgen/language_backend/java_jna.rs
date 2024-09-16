@@ -161,7 +161,11 @@ impl LanguageBackend for JavaJnaLanguageBackend<'_> {
         let has_data = e.tag.is_some();
 
         // First, write the enum as an integer type
-        let tag_name = format!("{}Tag", e.export_name);
+        let mut tag_name = e.export_name.clone();
+        if has_data {
+            tag_name = format!("{}Tag", e.export_name);
+        }
+        
         self.write_integer_type(
             out,
             &JnaIntegerType {
