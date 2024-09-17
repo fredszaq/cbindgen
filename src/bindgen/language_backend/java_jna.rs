@@ -173,7 +173,7 @@ impl LanguageBackend for JavaJnaLanguageBackend<'_> {
             &JnaIntegerType {
                 documentation: &e.documentation,
                 name: &tag_name,
-                underlying_jna_integer_type: UnderlyingJnaIntegerType::Long,
+                underlying_jna_integer_type: UnderlyingJnaIntegerType::Int,
                 signed: false,
                 deprecated: e.annotations.deprecated.as_deref(),
             },
