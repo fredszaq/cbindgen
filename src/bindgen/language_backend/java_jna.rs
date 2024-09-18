@@ -857,7 +857,7 @@ impl JavaJnaLanguageBackend<'_> {
 
             match &field.ty {
                 Type::Path(path) if path.name().starts_with("CArray") => {
-                    let inner = path.name().split("CArray").next().unwrap();
+                    let inner = path.export_name().trim_start_matches("CArray");
                     write!(out, "public {inner}[] {method_name}() {{ return ({inner}[]){field_name}.data.toArray({field_name}.data_len.intValue()); }}", method_name = format!("get{}", field.name.to_pascal_case()), field_name = field.name);
                     out.new_line();
                 }
