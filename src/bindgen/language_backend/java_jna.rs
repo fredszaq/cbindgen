@@ -1,7 +1,8 @@
-use heck::ToSnakeCase;
+use heck::{ToPascalCase, ToSnakeCase};
 
 use crate::bindgen::ir::{
-    Constant, Documentation, Enum, Field, Function, GenericPath, IntKind, Item, Literal, OpaqueItem, Path, PrimitiveType, Static, Struct, Type, Typedef, Union, VariantBody
+    Constant, Documentation, Enum, Field, Function, GenericPath, IntKind, Item, Literal,
+    OpaqueItem, Path, PrimitiveType, Static, Struct, Type, Typedef, Union, VariantBody,
 };
 use crate::bindgen::language_backend::LanguageBackend;
 use crate::bindgen::writer::ListType::Join;
@@ -48,7 +49,9 @@ impl LanguageBackend for JavaJnaLanguageBackend<'_> {
         write!(
             out,
             "final {} lib = Native.load(\"{}\", {}.class);",
-            name, self.binding_lib_crate_name.to_snake_case(), name
+            name,
+            self.binding_lib_crate_name.to_snake_case(),
+            name
         );
         out.close_brace(false);
         out.new_line();
@@ -208,20 +211,24 @@ impl LanguageBackend for JavaJnaLanguageBackend<'_> {
             // Write the union struct
             let union_name = format!("{}Union", e.export_name);
 
-            let union_fields: Vec<Field> = e.variants.iter().filter_map(|v| {
-                let body = match &v.body {
-                    VariantBody::Body { body, .. } => body,
-                    _ => return None,
-                };
+            let union_fields: Vec<Field> = e
+                .variants
+                .iter()
+                .filter_map(|v| {
+                    let body = match &v.body {
+                        VariantBody::Body { body, .. } => body,
+                        _ => return None,
+                    };
 
-                Some(Field {
-                    name: v.name.to_lowercase(),
-                    ty: body.fields.first().unwrap().ty.clone(),
-                    documentation: Documentation::none(),
-                    annotations: Default::default(),
-                    cfg: None,
+                    Some(Field {
+                        name: v.name.to_lowercase(),
+                        ty: body.fields.first().unwrap().ty.clone(),
+                        documentation: Documentation::none(),
+                        annotations: Default::default(),
+                        cfg: None,
+                    })
                 })
-            }).collect();
+                .collect();
 
             self.write_jna_struct(
                 out,
@@ -846,7 +853,15 @@ impl JavaJnaLanguageBackend<'_> {
             }
 
             write!(out, ";");
-            out.new_line()
+            out.new_line();
+
+            match &field.ty {
+                Type::Path(path) if path.name().starts_with("CArray") => {
+                    let inner = path.export_name().split("CArray").next().unwrap();
+                    write!(out, "public {inner}[] {method_name}() {{ return ({inner}[]){field_name}.data.toArray({field_name}.data_len.intValue()); }}", method_name = format!("get{}", field.name.to_pascal_case()), field_name = field.name);
+                }
+                _ => {}
+            }
         }
 
         out.close_brace(false);
