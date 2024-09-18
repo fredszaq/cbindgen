@@ -1,6 +1,8 @@
+use heck::{ToPascalCase, ToSnakeCase};
+
 use crate::bindgen::ir::{
-    Constant, Documentation, Enum, Field, Function, IntKind, Item, Literal, OpaqueItem,
-    PrimitiveType, Static, Struct, Type, Typedef, Union,
+    Constant, Documentation, Enum, Field, Function, GenericPath, IntKind, Item, Literal,
+    OpaqueItem, Path, PrimitiveType, Static, Struct, Type, Typedef, Union, VariantBody,
 };
 use crate::bindgen::language_backend::LanguageBackend;
 use crate::bindgen::writer::ListType::Join;
@@ -47,7 +49,9 @@ impl LanguageBackend for JavaJnaLanguageBackend<'_> {
         write!(
             out,
             "final {} lib = Native.load(\"{}\", {}.class);",
-            name, self.binding_lib_crate_name, name
+            name,
+            self.binding_lib_crate_name.to_snake_case(),
+            name
         );
         out.close_brace(false);
         out.new_line();
@@ -159,12 +163,19 @@ impl LanguageBackend for JavaJnaLanguageBackend<'_> {
     fn write_footers<W: Write>(&mut self, _: &mut SourceWriter<W>) {}
 
     fn write_enum<W: Write>(&mut self, out: &mut SourceWriter<W>, e: &Enum) {
+        let has_data = e.tag.is_some();
+
+        // First, write the enum as an integer type
+        let mut tag_name = e.export_name.clone();
+        if has_data {
+            tag_name = format!("{}Tag", e.export_name);
+        }
+
         self.write_integer_type(
             out,
             &JnaIntegerType {
                 documentation: &e.documentation,
-                name: &e.export_name,
-                /* enum are most of the time the same size as ints */
+                name: &tag_name,
                 underlying_jna_integer_type: UnderlyingJnaIntegerType::Int,
                 signed: false,
                 deprecated: e.annotations.deprecated.as_deref(),
@@ -179,17 +190,117 @@ impl LanguageBackend for JavaJnaLanguageBackend<'_> {
                             Literal::Expr(e) => e.parse::<i32>().ok(),
                             _ => None,
                         })
-                        .unwrap_or(current_discriminant + 1);
+                        .unwrap_or(current_discriminant);
                     lb.write_documentation(out, &variant.documentation);
                     write!(
                         out,
                         "public static final {} {} = new {}({});",
-                        e.export_name, variant.export_name, e.export_name, current_discriminant
+                        tag_name, variant.export_name, tag_name, current_discriminant
                     );
                     out.new_line();
+
+                    if variant.discriminant.is_none() {
+                        current_discriminant += 1;
+                    }
                 }
             },
         );
+
+        // If the enum has associated data, write it as a separate union and a wrapper struct
+        if has_data {
+            // Write the union struct
+            let union_name = format!("{}Union", e.export_name);
+
+            let union_fields: Vec<Field> = e
+                .variants
+                .iter()
+                .filter_map(|v| {
+                    let body = match &v.body {
+                        VariantBody::Body { body, .. } => body,
+                        _ => return None,
+                    };
+
+                    Some(Field {
+                        name: v.name.to_lowercase(),
+                        ty: body.fields.first().unwrap().ty.clone(),
+                        documentation: Documentation::none(),
+                        annotations: Default::default(),
+                        cfg: None,
+                    })
+                })
+                .collect();
+
+            self.write_jna_struct(
+                out,
+                &JnaStruct {
+                    documentation: &Documentation::none(),
+                    constants: &vec![],
+                    fields: &union_fields,
+                    name: &union_name,
+                    superclass: "Union",
+                    interface: "Union.ByValue",
+                    deprecated: None,
+                },
+            );
+
+            // Write the ByReference version of the wrapper struct
+            self.write_jna_struct(
+                out,
+                &JnaStruct {
+                    documentation: &Documentation::none(),
+                    constants: &vec![],
+                    fields: &union_fields,
+                    name: &format!("{}ByReference", &union_name),
+                    superclass: "Union",
+                    interface: "Union.ByReference",
+                    deprecated: None,
+                },
+            );
+
+            // Write the wrapper struct
+            let wrapper_fields = vec![
+                Field {
+                    name: "tag".to_string(),
+                    ty: Type::Path(GenericPath::new(Path::new(tag_name), vec![])),
+                    documentation: Documentation::none(),
+                    annotations: Default::default(),
+                    cfg: None,
+                },
+                Field {
+                    name: "data".to_string(),
+                    ty: Type::Path(GenericPath::new(Path::new(union_name), vec![])),
+                    documentation: Documentation::none(),
+                    annotations: Default::default(),
+                    cfg: None,
+                },
+            ];
+
+            self.write_jna_struct(
+                out,
+                &JnaStruct {
+                    documentation: &Documentation::none(),
+                    constants: &vec![],
+                    fields: &wrapper_fields,
+                    name: &e.export_name,
+                    superclass: "Structure",
+                    interface: "Structure.ByValue",
+                    deprecated: None,
+                },
+            );
+
+            self.write_jna_struct(
+                out,
+                &JnaStruct {
+                    documentation: &Documentation::none(),
+                    constants: &vec![],
+                    fields: &wrapper_fields,
+                    name: &format!("{}ByReference", &e.export_name),
+                    superclass: "Structure",
+                    interface: "Structure.ByReference",
+                    deprecated: None,
+                },
+            );
+        }
     }
 
     fn write_struct<W: Write>(&mut self, out: &mut SourceWriter<W>, s: &Struct) {
@@ -733,9 +844,25 @@ impl JavaJnaLanguageBackend<'_> {
             self.write_documentation(out, &field.documentation);
             out.write("public ");
             self.write_type(out, &field.ty);
-            write!(out, " {};", field.name);
+            write!(out, " {}", field.name);
 
-            out.new_line()
+            if let Type::Array(ty, size) = &field.ty {
+                write!(out, " = new ");
+                self.write_type(out, ty);
+                write!(out, "[{}]", size.as_str());
+            }
+
+            write!(out, ";");
+            out.new_line();
+
+            match &field.ty {
+                Type::Path(path) if path.name().starts_with("CArray") => {
+                    let inner = path.export_name().trim_start_matches("CArray");
+                    write!(out, "public {inner}[] {method_name}() {{ return ({inner}[]){field_name}.data.toArray({field_name}.data_len.intValue()); }}", method_name = format!("get{}", field.name.to_pascal_case()), field_name = field.name);
+                    out.new_line();
+                }
+                _ => {}
+            }
         }
 
         out.close_brace(false);
